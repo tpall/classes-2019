@@ -1,7 +1,7 @@
 ---
 title: "Data visualisation using ggplot2"
 author: "Taavi Päll"
-date: "2019-03-04"
+date: "2019-09-18"
 output: github_document
 ---
 
@@ -16,7 +16,7 @@ Here we learn:
 - how to make basic scatterplot and 
 - how to map variables to point color, size, or shape.
 
-## Sources
+## Source
 
 - This tutorial is based on "Data visualisation with ggplot2" chapter in [R4DS](http://r4ds.had.co.nz/data-visualisation.html) by G. Grolemund and H. Wickham.
 - [lectures/graafilised-lahendused](https://rstats-tartu.github.io/lectures/graafilised-lahendused.html) and [learn-r/ggplot2](https://tpall.github.io/learn-r/#ggplot2) by Ülo Maiväli and Taavi Päll
