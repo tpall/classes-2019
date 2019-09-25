@@ -64,7 +64,7 @@ Let's create simple scatter plot to explore relationship between fuel consumptio
 We put displ on the x-axis and hwy on the y-axis:
 
 ```{r}
-ggplot(data = mpg) + 
+ggplot(data = mpg) +
   geom_point(mapping = aes(x = displ, y = hwy))
 ```
 
@@ -110,13 +110,26 @@ mpg
 4. Make scatterplot of *hwy* vs *cyl* using mpg data:
 ```{r}
 ggplot(data = mpg) +
-  geom_point(mapping = aes(x = hwy, y = cyl), position = position_jitter(width = 0.1, seed = 11))
+  geom_point(mapping = aes(x = cyl, y = hwy)) 
 ```
+
+In R first 2 argument are also mapped by position, so you can skip "arg="
+```{r}
+set.seed(111)
+ggplot(mpg) +
+  geom_point(aes(cyl, hwy), position = position_jitter(0.24))
+```
+
+```{r}
+ggplot(mpg) +
+  geom_point(aes(cyl, hwy), position = "jitter")
+```
+
 
 What happens if you add some noise to points? Hint: use geom_jitter instead
 ```{r}
 ggplot(data = mpg) +
-  geom_jitter(mapping = aes(x = hwy, y = cyl))
+  geom_jitter(mapping = aes(x = cyl, y = hwy), width = 0.24)
 ```
 
 5. What happens when you make a scatterplot of *class* versus *drv* using mpg data:
@@ -208,6 +221,18 @@ ggplot(data = starwars) +
   geom_point(mapping = aes(x = height, y = mass, size = birth_year))
 ```
 
+1. use log function (NB! log is natural logarithm)
+```{r}
+ggplot(data = starwars) +
+  geom_point(mapping = aes(x = height, y = log10(mass), size = birth_year))
+```
+
+2. convert y-axit to log scale
+```{r}
+ggplot(data = starwars) +
+  geom_point(mapping = aes(x = height, y = mass, size = birth_year)) +
+  scale_y_log10()
+```
 
 Extra: there is apparent outlier. Try using geom_label to add name to this point:
 
@@ -228,7 +253,7 @@ You can change the appearance of your plot also manually: change the color or sh
 For example, let's suppose you want to make all points in plot blue in displ~hwy scatterplot using mpg data:
 ```{r}
 ggplot(data = mpg) +
-  geom_point(mapping = aes(x = displ, y = hwy), color = "#0000ff", size = 10) # try HEX code "#0000ff" or rgb(0,0,1)
+  geom_point(mapping = aes(x = displ, y = hwy), color = "blue", size = 10) # try HEX code "#0000ff" or rgb(0,0,1)
 ```
 
 Here, the color is not connected to the variable in your dataset as it is assigned outside aes(), but it just changes the appearance of the plot. 
