@@ -1,6 +1,6 @@
 ---
 title: "Data import and tidy data"
-date: "2018-04-16"
+date: "2019-10-02"
 output: github_document
 ---
 
@@ -37,8 +37,14 @@ Most of readr's functions are concerned with turning flat files into data frames
 The first argument to read_csv() is the most important: it's the path to the file to read.
 
 ```{r}
-(index <- read_csv(file = "data/consumer_index.csv"))
+(index <- read_csv(file = "data/viruses.csv"))
 ```
+
+```{r}
+read_csv(file = "data/viruses.csv",col_types = cols(release_date = "c"))
+```
+
+
 
 When you run read_csv() it prints out a column specification that gives the name and type of each column. That's an important part of readr: http://r4ds.had.co.nz/data-import.html#parsing-a-file
 
@@ -53,6 +59,13 @@ Note that string used in the previous example is spread into three lines. You ca
 ```{r}
 read_csv("a,b,c\n4,5,6\n1,2,3")
 ```
+
+
+Back to column types:
+```{r}
+read_csv("a,b\n4,2-13-2007", col_types = cols(b = col_date(format = "%m-%d-%Y")))
+```
+
 
 ### Skip rows and column names options
 
@@ -80,12 +93,26 @@ read_csv("# A comment I want to skip
 
 Real-life example:
 ```{r}
-(rba <- read_csv("data/ECIS_141022_MFT_2_RbA.csv"))
+pac <- read_csv2("hf-data/post-acute_care_data_only (rows).csv")
+# or use read_delim() with ";" as delimiter
 ```
+
+```{r}
+pac
+```
+
+```{r}
+my_date_format <- col_date(format = "%d.%m.%Y")
+pac <- read_delim("hf-data/post-acute_care_data_only (rows).csv",
+                  delim = ";",
+          na = "n/a", col_types = cols(invoice_start = my_date_format,
+                                  invoice_end = my_date_format))
+```
+
 
 So what's the problem?
 ```{r}
-problems(rba)
+problems(pac)
 ```
 
 This real-life example bring us to the another common issue with csv tables:
@@ -96,6 +123,7 @@ In this example, we have only values, with no apparent column names. Note that b
 ```{r}
 read_csv("1,2,3\n4,5,6", col_names = FALSE)
 ```
+
 Alternatively you can pass col_names a character vector which will be used as the column names:
 ```{r}
 read_csv("1,2,3\n4,5,6", col_names = c("x","y","z"))
@@ -106,33 +134,6 @@ Another option that commonly needs tweaking is na: this specifies the value (or 
 read_csv("a,b,c\n1,2,.", na = ".")
 ```
 
-Now we really have to have a look at the file. So it seems that file header, first 21 colums contain various experimental metadata and [Data] start at line 24. Let's skip first 23 lines and we don't have a header then:
-```{r}
-(rba <- read_csv("data/ECIS_141022_MFT_2_RbA.csv", skip = 23, col_names = FALSE))
-```
-
-Ok, now we have a rectangular table with 318 rows and 481 columns. Now we need to add also column titles... I think the column titles are in rows 19 and 20 with 382 columns. Let's import this range from our .csv file: 
-
-```{r}
-(rba_tit <- read_csv("data/ECIS_141022_MFT_2_RbA.csv", skip = 18, n_max = 964, col_names = FALSE))
-```
-
-Ups! readr leaves us high and dry with this...because there is no easy way to specify how much 
-
-```{r}
-(headers <- read.csv("data/ECIS_141022_MFT_2_RbA.csv", skip = 19, header = FALSE, nrows = 2, stringsAsFactors = FALSE))
-```
-
-```{r}
-headers_merged <- paste(headers[2,], headers[1,], sep = "_")
-head(headers_merged) # we have NA_NA at the end, which needs to be removed
-```
-
-These colnames need some work but we can use them already right now:
-```{r}
-colnames(rba) <- head(headers_merged, -1) # we skip last value
-rba
-```
 
 ### Compared to base R
 
@@ -141,7 +142,7 @@ If you've used R before, you might wonder why we're not using read.csv(). There 
 - They are typically much faster (~10x) than their base equivalents. Long running jobs have a progress bar, so you can see what's happening. If you're looking for raw speed, try data.table::fread(). It doesn't fit quite so well into the tidyverse, but it can be quite a bit faster.
 - They produce tibbles, they don't convert character vectors to factors (use stringsAsFactors = FALSE), use row names, or munge the column names. These are common sources of frustration with the base R functions.
 
-- They are more reproducible. Base R functions inherit some behaviour from your operating system and environment variables, so import code that works on your computer might not work on someone else’s.
+- They are more reproducible. Base R functions inherit some behaviour from your operating system and environment variables, so import code that works on your computer might not work on someone else’s (eg stringsAsFactors).
 
 ### Exercises
 
@@ -184,24 +185,31 @@ While read_excel() auto detects the format from the file extension, read_xls() a
 
 Let's have a look at the sheets:
 ```{r}
-(sheets <- excel_sheets("data/ECIS_141022_MFT_1.xls"))
+sheets <- excel_sheets("hf-data/post-acute_care_data_only (rows).xlsx")
+sheets
 ```
 
 You need to import one sheet at the time:
 ```{r}
-(z_500 <- read_excel("data/ECIS_141022_MFT_1.xls", sheet = "Z 500 Hz"))
+pac <- read_excel("hf-data/post-acute_care_data_only (rows).xlsx", sheet = "post-acute_care", col_types = cols(invoice_start = my))
+pac
 ```
 
-```{r, eval = FALSE}
-(z <- read_excel("data/ECIS_141022_MFT_1.xls", sheet = 3:5))
+```{r}
+library(lubridate)
+start <- ymd("1900-01-01")
+start + 39826
 ```
 
+```{r}
+read_excel("hf-data/post-acute_care_data_only (rows).xlsx", sheet = 1)
+```
 
 To import multiple sheets, e.g. sheets 3 to 5:
-```{r}
-mft <- map(sheets[3:5], ~ read_excel("data/ECIS_141022_MFT_1.xls", sheet = .x))
-names(mft) <- sheets[3:5]
-bind_rows(mft, .id = "Param")
+```{r, eval = FALSE}
+mft <- map(sheets, ~ read_excel("hf-data/post-acute_care_data_only (rows).xlsx", sheet = .x))
+names(mft) <- sheets
+bind_rows(mft, .id = "id")
 ```
 
 ## Tidy data
