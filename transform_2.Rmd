@@ -150,7 +150,6 @@ To demonstrate logs in action, we can look at the virus genome size.
 
 First, let's plot distribution of virus genomes on linear scale:
 
-
 ```{r}
 ggplot(viruses) +
   geom_histogram(aes(size_kb), bins = 30) +
@@ -195,21 +194,29 @@ This allows you to compute running differences (e.g. x - lag(x)) or find when va
 
 ```{r}
 (x <- 1:10)
-lag(x)
+lag(x, n = 1)
 ?lag
 lead(x)
 diff(x) # output is length - 1 !!!!
+length(diff(x)) == length(x)
 diff(c(2,3,5))
 ```
 
+How to use lag/lead:
+```{r}
+x - lag(x)
+```
+
+
+
 - Cumulative and rolling aggregates: R provides functions for running sums, products, mins and maxes: 
 
-cumsum(), 
-cumprod(), 
-cummin(), 
-cummax(); 
+cumsum()
+cumprod() 
+cummin() 
+cummax() 
 
-and dplyr provides cummean() for cumulative means.
+and dplyr provides cummean() for cumulative means
 
 ```{r}
 cumsum(x)
@@ -221,10 +228,19 @@ cummean(x)
 It does the most usual type of ranking (e.g. 1st, 2nd, 2nd, 4th).
 
 ```{r}
-(y <- c(1, 2, 2, NA, 3, 4))
+y <- c(1, 2, 2, NA, 3, 4)
+message("This is original vector:", y)
 min_rank(y)
 min_rank(desc(y))
 ```
+
+```{r}
+?top_n()
+df <- data.frame(x = c(10, 4, 1, 6, 3, 1, 1))
+df %>% top_n(2)
+arrange(df, x)
+```
+
 
 Let's pick smallest and largest virus:
 ```{r}
@@ -302,7 +318,7 @@ For example, if we applied exactly the same code to a data frame grouped by (sub
 First, we create grouped by table
 ```{r}
 viruses %>% 
-  group_by(., group) %>% 
+  group_by(., subgroup) %>% 
   summarise(., size_kb = mean(size_kb, na.rm = TRUE))
 ```
 
@@ -326,7 +342,7 @@ summarise(viruses_group, size_kb = mean(size_kb))
 
 > Together group_by() and summarise() provide one of the main tool that you'll use most frequently when working with dplyr: grouped summaries. 
 
-You can also use group_by atogether with mutate()!
+You can also use group_by together with mutate()!
 
 Example of grouped mutate:
 
@@ -384,6 +400,10 @@ viruses %>%
   arrange(desc(size_kb))
 ```
 
+```{r}
+arrange(filter(summarise(group_by(viruses, subgroup, group), size_kb = mean(size_kb, na.rm = TRUE)), str_detect(group, "dsDNA")), desc(size_kb))
+```
+
 
 This focuses on the transformations, not what's being transformed, which makes the code easier to read. 
 
@@ -403,6 +423,15 @@ viruses %>%
   group_by(subgroup, group) %>% 
   summarise(size_kb = mean(size_kb, na.rm = TRUE),
             n = n())
+```
+
+
+```{r}
+viruses %>% 
+  group_by(subgroup, group) %>% 
+  summarise(size_kb = mean(size_kb, na.rm = TRUE),
+            N = n()) %>% 
+  filter(N > 10)
 ```
 
 
@@ -485,6 +514,11 @@ viruses %>%
   count(subgroup, sort = TRUE)
 ```
 
+```{r}
+viruses %>% 
+  group_by(subgroup) %>% 
+  count(sort = TRUE)
+```
 
 - Counts and proportions of logical values: sum(x > 10), mean(y == 0). 
 
@@ -583,13 +617,17 @@ Grouping is most useful in conjunction with summarise(), but you can also do con
 - Find the largest (#1) virus(es) for each subgroup by using min_rank():
 
 ```{r}
-
+viruses %>% 
+  group_by(subgroup) %>% 
+  filter(min_rank(desc(size_kb)) == 1)
 ```
 
 - Find all groups with average bigger than a threshold:
 
 ```{r}
-
+viruses %>% 
+  group_by(group) %>% 
+  filter(mean(size_kb) > 10)
 ```
 
 - Standardise to compute per group metrics (sweep):
