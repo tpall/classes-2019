@@ -1,7 +1,7 @@
 ---
 title: "Data transformation using dplyr (aka five verbs) 2"
 author: "Taavi Päll"
-date: "2019-03-11"
+date: "2019-10-09"
 output: github_document
 ---
 
@@ -20,22 +20,17 @@ Import viruses.csv file from data subfolder, note that some genes and proteins v
 ```{r}
 viruses <- read_csv(here("data", "viruses.csv"), na = c(NA, "-"))
 viruses
+summary <- read_csv(here("output/summary.csv"))
 ```
 
 
 ## Add new variables with mutate()
-
 
 - mutate() allows you to modify or create new variables (columns) in a dataset.   
 - mutate works on vectors!   
 - mutate does not reduce/change the number of rows in tibble!   
 - mutate always adds columns to the end of dataset
 
-Based on viruses dataset, there are not many questions that we would ask that need creation of new variables. 
-
-However, based on genome size and number of genes and proteins we can calculate gene density per kb:
-
-Let's create smaller more focussed dataset by selecting organism_name, tax_id, size_kb, genes, proteins columns:
 ```{r}
 genes_kb <- select(viruses, organism_name, tax_id, size_kb, genes, proteins)
 genes_kb
@@ -50,8 +45,8 @@ dplyr has function case_when() that vectorises multiple if and else if statement
 ```{r}
 genes_kb <- mutate(genes_kb, 
                    orfs = case_when(
-                     is.na(genes) ~ proteins,
-                     TRUE ~ genes
+                     is.na(genes) ~ "tyrannosaurus rex",
+                     TRUE ~ "genes"
                    ))
 genes_kb
 ```
@@ -60,6 +55,15 @@ Here we created new variable "orfs" and assigned proteins number to it in cases 
 
 
 All other cases (TRUE) we assigned genes value to orfs.
+
+```{r}
+genes_kb <- mutate(genes_kb, 
+                   orfs = case_when(
+                     is.na(genes) ~ proteins,
+                     TRUE ~ genes
+                   ))
+```
+
 
 Now we are ready to calculate number of orfs per kb (orfs / size_kb):
 
@@ -82,8 +86,6 @@ There is also transmute (?transmute) a close cousin of mutate that drops all oth
 transmute(genes_kb, orfs_kb = orfs / size_kb)
 ```
 
-
-
 ## Useful creation functions
 
 There are many functions for creating new variables that you can use with mutate(). 
@@ -99,7 +101,25 @@ For example, x / sum(x) calculates the proportion of a total, and y - mean(y) co
 
 Let's calculate the difference of gc values from the global mean, name new variable gc_diff:
 ```{r}
-mutate(viruses, gc_diff = gc - mean(gc, na.rm = TRUE))
+gc_centered <- transmute(viruses, gc_diff = gc - mean(gc, na.rm = TRUE))
+gc_centered
+```
+
+
+```{r}
+ggplot(gc_centered) +
+  geom_histogram(aes(gc_diff), bins = 30) +
+  geom_vline(xintercept = 0, linetype = "dashed")
+```
+
+```{r}
+gc_centered <- gc_centered %>% 
+  mutate(gc_std = gc_diff / sd(gc_diff, na.rm = TRUE))
+```
+
+```{r}
+ggplot(gc_centered) +
+  geom_histogram(aes(gc_std), bins = 30)
 ```
 
 
