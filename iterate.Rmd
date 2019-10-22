@@ -363,6 +363,25 @@ tb <- tibble(
 tb
 ```
 
+Let's take second element from each vector (in this case tibble column)
+```{r}
+map(tb, 2)
+```
+
+To get a vector :
+```{r}
+map_dbl(tb, 2)
+unlist(map(tb, 2))
+map_df(tb, 2)
+```
+
+
+This is not working if you want to get vector "a"
+```{r}
+map(tb, "a")
+```
+
+
 Here we calculate column means over data frame:
 ```{r}
 map_dbl(tb, mean)
@@ -411,8 +430,18 @@ map2(a, b, ~ .x + .y)
 map2(a, b, `+`)
 ```
 
+
 ```{r}
-pmap()
+c <- list(10:12)
+pmap(list(a, b, c), sum)
+```
+
+```{r}
+s1 <- pmap_dbl(tb, sum)
+s1
+s2 <- apply(tb, 1, sum)
+s2
+all_equal(s1, s2)
 ```
 
 
@@ -461,6 +490,14 @@ models %>%
   map(summary) %>% 
   map_dbl("r.squared")
 ```
+
+
+```{r}
+models %>% 
+  map(summary) %>% 
+  map("coefficients")
+```
+
 
 You can also use integers to extract elements by position:
 ```{r}
